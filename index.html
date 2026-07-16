@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>รวมหน้าเอกสาร — Split &amp; Regroup PDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F5F4;
+    --card:#FFFFFF;
+    --ink:#1B2A38;
+    --ink-soft:#5A6B78;
+    --stamp:#C1443C;
+    --stamp-soft:#F3DEDC;
+    --teal:#2F6F63;
+    --teal-soft:#DCEAE6;
+    --line:#DBE1E2;
+    --warn:#B4650A;
+    --warn-soft:#F6E6D2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','IBM Plex Mono',sans-serif;
+    line-height:1.55;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:48px 24px 96px;}
+  header.top{margin-bottom:44px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--stamp);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    margin:0 0 12px;
+    letter-spacing:-.01em;
+  }
+  .lede{color:var(--ink-soft);font-size:15px;max-width:60ch;margin:0;}
+  .privacy{
+    margin-top:14px;
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    font-size:12.5px;
+    color:var(--teal);
+    background:var(--teal-soft);
+    border-radius:999px;
+    padding:6px 14px;
+  }
+
+  .step{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px 28px 30px;
+    margin-bottom:22px;
+    position:relative;
+    animation:rise .4s ease both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px;}
+  .step-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:#fff;
+    background:var(--ink);
+    border-radius:6px;
+    padding:3px 8px;
+    letter-spacing:.05em;
+  }
+  .step-title{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin:0;}
+  .step-sub{color:var(--ink-soft);font-size:13.5px;margin:2px 0 0;}
+
+  .drop{
+    border:1.5px dashed var(--line);
+    border-radius:12px;
+    padding:26px;
+    text-align:center;
+    cursor:pointer;
+    transition:.15s border-color, .15s background;
+    background:#FAFBFB;
+  }
+  .drop:hover, .drop.drag{border-color:var(--stamp);background:var(--stamp-soft);}
+  .drop p{margin:0;font-size:14px;color:var(--ink-soft);}
+  .drop .big{font-size:15px;color:var(--ink);font-weight:500;margin-bottom:4px;}
+  input[type=file]{display:none;}
+
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px;}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);}
+  th{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
+  td.mono, th.mono{font-family:'IBM Plex Mono',monospace;}
+  .letter-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:6px;
+    background:var(--ink);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;
+    margin-right:8px;
+  }
+  .row-actions{display:flex;gap:6px;}
+  .icon-btn{
+    border:1px solid var(--line);background:#fff;border-radius:6px;
+    width:26px;height:26px;cursor:pointer;font-size:12px;color:var(--ink-soft);
+  }
+  .icon-btn:hover{border-color:var(--stamp);color:var(--stamp);}
+
+  select, .text-input{
+    font-family:inherit;font-size:14px;
+    padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);
+  }
+  .field-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12px;color:var(--ink-soft);}
+  .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-top:14px;color:var(--ink-soft);}
+
+  button.primary{
+    font-family:'IBM Plex Sans Thai',sans-serif;font-weight:500;font-size:14.5px;
+    background:var(--stamp);color:#fff;border:none;border-radius:9px;
+    padding:12px 22px;cursor:pointer;transition:.15s transform,.15s box-shadow;
+  }
+  button.primary:hover{transform:translateY(-1px);box-shadow:0 6px 14px -6px rgba(193,68,60,.55);}
+  button.primary:disabled{background:#C9CDCE;cursor:not-allowed;transform:none;box-shadow:none;}
+  button.secondary{
+    font-family:'IBM Plex Sans Thai',sans-serif;font-weight:500;font-size:14px;
+    background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:11px 20px;cursor:pointer;
+  }
+  button.secondary:hover{border-color:var(--ink);}
+
+  .stamp-badge{
+    position:absolute;top:24px;right:28px;
+    border:1.5px dashed var(--stamp);
+    color:var(--stamp);
+    border-radius:50%;
+    width:78px;height:78px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transform:rotate(-8deg);
+    font-family:'IBM Plex Mono',monospace;
+    text-align:center;
+    line-height:1.15;
+  }
+  .stamp-badge b{font-size:20px;}
+  .stamp-badge span{font-size:9px;letter-spacing:.05em;}
+
+  .notice{border-radius:10px;padding:12px 14px;font-size:13.5px;margin-top:14px;display:flex;gap:10px;}
+  .notice.warn{background:var(--warn-soft);color:#7A4B08;}
+  .notice.ok{background:var(--teal-soft);color:#1F4F45;}
+  .notice.err{background:var(--stamp-soft);color:#8C2F27;}
+
+  .log{
+    margin-top:14px;max-height:180px;overflow-y:auto;
+    background:#141C24;color:#CBD5D9;border-radius:10px;padding:12px 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6;
+  }
+  .log .l-err{color:#FF8A80;}
+  .log .l-warn{color:#FFD180;}
+  .log .l-ok{color:#8CE0C4;}
+
+  .progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:16px;}
+  .progress > i{display:block;height:100%;width:0%;background:var(--teal);transition:width .2s;}
+
+  .results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .result-row{
+    display:flex;align-items:center;justify-content:space-between;
+    border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13.5px;
+  }
+  .result-row a{color:var(--teal);text-decoration:none;font-weight:500;}
+  .result-row a:hover{text-decoration:underline;}
+
+  .empty-hint{color:var(--ink-soft);font-size:13px;font-style:italic;}
+  footer{text-align:center;color:var(--ink-soft);font-size:12px;margin-top:40px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">Split → Regroup → Rename</p>
+    <h1>รวมหน้าเอกสารข้ามไฟล์ ตามรายชื่อจาก Excel</h1>
+    <p class="lede">อัปโหลด PDF หลายไฟล์ ระบบจะตัดออกเป็นหน้า แล้วจับกลุ่มตาม "ลำดับหน้า" ข้ามไฟล์ทั้งหมด (หน้า 1 ของทุกไฟล์ → ชุดที่ 1, หน้า 2 ของทุกไฟล์ → ชุดที่ 2, ...) จากนั้นตั้งชื่อไฟล์ผลลัพธ์แต่ละชุดตามรายชื่อใน Excel</p>
+    <div class="privacy">🔒 ประมวลผลทั้งหมดในเบราว์เซอร์ของคุณ ไม่มีการอัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์</div>
+  </header>
+
+  <!-- STEP 1: PDF UPLOAD -->
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">01</span>
+      <div>
+        <p class="step-title">อัปโหลดไฟล์ PDF</p>
+        <p class="step-sub">เลือกได้หลายไฟล์ ลำดับไฟล์ที่แสดงด้านล่างคือลำดับที่จะใช้รวมหน้าในแต่ละชุด</p>
+      </div>
+    </div>
+
+    <div id="pdfDrop" class="drop">
+      <p class="big">ลากไฟล์ PDF มาวางที่นี่</p>
+      <p>หรือคลิกเพื่อเลือกไฟล์ (เลือกหลายไฟล์ได้)</p>
+      <input id="pdfInput" type="file" accept="application/pdf" multiple />
+    </div>
+
+    <table id="pdfTable" style="display:none;">
+      <thead>
+        <tr><th style="width:40px;"></th><th>ไฟล์</th><th class="mono">จำนวนหน้า</th><th style="width:70px;"></th></tr>
+      </thead>
+      <tbody id="pdfTbody"></tbody>
+    </table>
+    <p id="pdfEmptyHint" class="empty-hint">ยังไม่มีไฟล์ที่อัปโหลด</p>
+    <div id="pdfNotice"></div>
+  </section>
+
+  <!-- STEP 2: EXCEL UPLOAD -->
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">02</span>
+      <div>
+        <p class="step-title">อัปโหลดรายชื่อจาก Excel</p>
+        <p class="step-sub">เลือกชีตที่ต้องการอ่าน แล้วระบุคอลัมน์ "ชื่อ" และ "สกุล" — เรียงแถวตามลำดับชุดที่ 1, 2, 3, ...</p>
+      </div>
+    </div>
+
+    <div id="xlsxDrop" class="drop">
+      <p class="big">ลากไฟล์ Excel มาวางที่นี่</p>
+      <p>หรือคลิกเพื่อเลือกไฟล์ (.xlsx, .xls, .csv)</p>
+      <input id="xlsxInput" type="file" accept=".xlsx,.xls,.csv" />
+    </div>
+
+    <div id="xlsxConfig" style="display:none;">
+      <div class="field-row">
+        <div class="field">
+          <label for="sheetSelect">ชีตที่ต้องการใช้</label>
+          <select id="sheetSelect"></select>
+        </div>
+        <div class="field">
+          <label for="nameCol">คอลัมน์ "ชื่อ"</label>
+          <select id="nameCol"></select>
+        </div>
+        <div class="field">
+          <label for="surnameCol">คอลัมน์ "สกุล"</label>
+          <select id="surnameCol"></select>
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="headerRowChk" checked />
+        <label for="headerRowChk">แถวแรกของชีตนี้เป็นหัวตาราง (ไม่ใช่ข้อมูล)</label>
+      </div>
+
+      <table id="namesTable" style="display:none;margin-top:18px;">
+        <thead><tr><th class="mono" style="width:70px;">ชุดที่</th><th>ชื่อไฟล์ผลลัพธ์ (ตัวอย่าง)</th></tr></thead>
+        <tbody id="namesTbody"></tbody>
+      </table>
+    </div>
+    <div id="xlsxNotice"></div>
+  </section>
+
+  <!-- STEP 3: VALIDATE & PROCESS -->
+  <section class="step">
+    <div class="stamp-badge" id="stampBadge" style="display:none;">
+      <b id="stampCount">0</b><span>ชุดเอกสาร</span>
+    </div>
+    <div class="step-head">
+      <span class="step-num">03</span>
+      <div>
+        <p class="step-title">ตรวจสอบและประมวลผล</p>
+        <p class="step-sub">ระบบจะรวมหน้าที่ตำแหน่งเดียวกันจากทุกไฟล์ PDF เป็นเอกสารใหม่ 1 ไฟล์ต่อชุด</p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="secondary" id="validateBtn">ตรวจสอบข้อมูล</button>
+      <button class="primary" id="processBtn" disabled>เริ่มประมวลผล</button>
+    </div>
+
+    <div id="validateNotice"></div>
+
+    <table id="previewTable" style="display:none;margin-top:18px;">
+      <thead><tr id="previewHead"></tr></thead>
+      <tbody id="previewBody"></tbody>
+    </table>
+
+    <div class="progress" id="progressWrap" style="display:none;"><i id="progressBar"></i></div>
+
+    <div class="results" id="results"></div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="primary" id="downloadZipBtn" style="display:none;">ดาวน์โหลดทั้งหมดเป็น .zip</button>
+    </div>
+
+    <div class="log" id="log"></div>
+  </section>
+
+  <footer>ทำงานฝั่งไคลเอนต์ทั้งหมดด้วย pdf-lib, SheetJS และ JSZip — ไม่มีข้อมูลถูกส่งออกจากเบราว์เซอร์</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  const state = {
+    pdfFiles: [],      // { id, name, letter, pageCount, pdfDoc }
+    workbook: null,
+    sheetName: null,
+    sheetRows: [],      // array-of-arrays for the selected sheet
+    headerRow: true,
+    nameColIdx: -1,
+    surnameColIdx: -1,
+    outputNames: [],    // computed base names per group index
+    results: []         // { filename, bytes }
+  };
+
+  // ---------- helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const logEl = $('log');
+
+  function log(msg, level){
+    const line = document.createElement('div');
+    const time = new Date().toLocaleTimeString('th-TH', {hour12:false});
+    line.textContent = `[${time}] ${msg}`;
+    if(level === 'err') line.className = 'l-err';
+    else if(level === 'warn') line.className = 'l-warn';
+    else if(level === 'ok') line.className = 'l-ok';
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function notice(container, type, html){
+    container.innerHTML = `<div class="notice ${type}">${html}</div>`;
+  }
+  function clearNotice(container){ container.innerHTML=''; }
+
+  function letterFor(index){
+    // A, B, C ... Z, AA, AB ...
+    let n = index, s = '';
+    do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n/26) - 1; } while(n >= 0);
+    return s;
+  }
+
+  function sanitizeFilename(str){
+    return String(str || '')
+      .replace(/[\\/:*?"<>|]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function uniqueNameFactory(){
+    const used = new Map();
+    return function(base){
+      if(!used.has(base)){ used.set(base, 1); return base; }
+      const n = used.get(base) + 1;
+      used.set(base, n);
+      return `${base} (${n})`;
+    };
+  }
+
+  function downloadBlob(bytes, filename, mime){
+    const blob = new Blob([bytes], {type: mime || 'application/pdf'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // ---------- drag & drop wiring ----------
+  function wireDrop(dropEl, inputEl, onFiles){
+    dropEl.addEventListener('click', () => inputEl.click());
+    inputEl.addEventListener('change', (e) => onFiles(Array.from(e.target.files || [])));
+    ['dragenter','dragover'].forEach(ev => dropEl.addEventListener(ev, (e) => {
+      e.preventDefault(); dropEl.classList.add('drag');
+    }));
+    ['dragleave','drop'].forEach(ev => dropEl.addEventListener(ev, (e) => {
+      e.preventDefault(); dropEl.classList.remove('drag');
+    }));
+    dropEl.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files || []);
+      if(files.length) onFiles(files);
+    });
+  }
+
+  // ---------- STEP 1: PDF handling ----------
+  async function addPdfFiles(fileList){
+    const notif = $('pdfNotice');
+    for(const file of fileList){
+      if(file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')){
+        log(`ข้ามไฟล์ "${file.name}" — ไม่ใช่ไฟล์ PDF`, 'warn');
+        continue;
+      }
+      try{
+        const buf = await file.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(buf, {ignoreEncryption: false});
+        const pageCount = pdfDoc.getPageCount();
+        state.pdfFiles.push({
+          id: crypto.randomUUID(),
+          name: file.name,
+          pageCount,
+          pdfDoc
+        });
+        log(`โหลด "${file.name}" สำเร็จ (${pageCount} หน้า)`, 'ok');
+      }catch(err){
+        console.error('addPdfFiles | load pdf failed', err);
+        notice(notif, 'err', `ไม่สามารถเปิดไฟล์ "${file.name}" ได้ — อาจเสียหายหรือมีการเข้ารหัสด้วยรหัสผ่าน`);
+        log(`โหลด "${file.name}" ล้มเหลว: ${err.message}`, 'err');
+      }
+    }
+    renderPdfTable();
+    resetProcessing();
+  }
+
+  function renderPdfTable(){
+    const tbody = $('pdfTbody');
+    tbody.innerHTML = '';
+    state.pdfFiles.forEach((f, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="letter-badge">${letterFor(i)}</span></td>
+        <td>${f.name}</td>
+        <td class="mono">${f.pageCount}</td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn" data-act="up" title="เลื่อนขึ้น">↑</button>
+            <button class="icon-btn" data-act="down" title="เลื่อนลง">↓</button>
+            <button class="icon-btn" data-act="del" title="ลบ">✕</button>
+          </div>
+        </td>`;
+      tr.querySelector('[data-act=up]').onclick = () => { moveFile(i, -1); };
+      tr.querySelector('[data-act=down]').onclick = () => { moveFile(i, 1); };
+      tr.querySelector('[data-act=del]').onclick = () => { state.pdfFiles.splice(i,1); renderPdfTable(); resetProcessing(); };
+      tbody.appendChild(tr);
+    });
+    $('pdfTable').style.display = state.pdfFiles.length ? '' : 'none';
+    $('pdfEmptyHint').style.display = state.pdfFiles.length ? 'none' : '';
+  }
+
+  function moveFile(index, dir){
+    const target = index + dir;
+    if(target < 0 || target >= state.pdfFiles.length) return;
+    const tmp = state.pdfFiles[index];
+    state.pdfFiles[index] = state.pdfFiles[target];
+    state.pdfFiles[target] = tmp;
+    renderPdfTable();
+    resetProcessing();
+  }
+
+  // ---------- STEP 2: Excel handling ----------
+  async function handleExcelFile(file){
+    const notif = $('xlsxNotice');
+    clearNotice(notif);
+    try{
+      const buf = await file.arrayBuffer();
+      state.workbook = XLSX.read(buf, {type:'array'});
+      const sheetSelect = $('sheetSelect');
+      sheetSelect.innerHTML = '';
+      state.workbook.SheetNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        sheetSelect.appendChild(opt);
+      });
+      $('xlsxConfig').style.display = '';
+      log(`โหลดไฟล์ Excel "${file.name}" สำเร็จ (${state.workbook.SheetNames.length} ชีต)`, 'ok');
+      loadSheet(sheetSelect.value);
+    }catch(err){
+      console.error('handleExcelFile | read workbook failed', err);
+      notice(notif, 'err', `ไม่สามารถอ่านไฟล์ "${file.name}" ได้ — ตรวจสอบว่าเป็นไฟล์ .xlsx/.xls/.csv ที่ไม่เสียหาย`);
+      log(`อ่านไฟล์ Excel ล้มเหลว: ${err.message}`, 'err');
+    }
+  }
+
+  function loadSheet(sheetName){
+    try{
+      state.sheetName = sheetName;
+      const ws = state.workbook.Sheets[sheetName];
+      state.sheetRows = XLSX.utils.sheet_to_json(ws, {header:1, blankrows:false, defval:''});
+      populateColumnSelectors();
+      computeAndRenderNames();
+    }catch(err){
+      console.error('loadSheet | parse sheet failed', err);
+      notice($('xlsxNotice'), 'err', `ไม่สามารถอ่านชีต "${sheetName}" ได้`);
+      log(`อ่านชีต "${sheetName}" ล้มเหลว: ${err.message}`, 'err');
+    }
+  }
+
+  function populateColumnSelectors(){
+    state.headerRow = $('headerRowChk').checked;
+    const header = state.headerRow ? (state.sheetRows[0] || []) : [];
+    const dataRows = state.headerRow ? state.sheetRows.slice(1) : state.sheetRows;
+    const colCount = Math.max(header.length, ...dataRows.map(r => r.length), 1);
+
+    const nameSel = $('nameCol'), surnameSel = $('surnameCol');
+    nameSel.innerHTML = ''; surnameSel.innerHTML = '';
+
+    let guessedName = 0, guessedSurname = Math.min(1, colCount-1);
+    for(let c=0; c<colCount; c++){
+      const label = header[c] ? String(header[c]) : `คอลัมน์ ${c+1}`;
+      const opt1 = document.createElement('option'); opt1.value = c; opt1.textContent = label;
+      const opt2 = opt1.cloneNode(true);
+      nameSel.appendChild(opt1); surnameSel.appendChild(opt2);
+      const norm = label.replace(/\s/g,'');
+      if(norm.includes('สกุล')) guessedSurname = c;
+      else if(norm.includes('ชื่อ')) guessedName = c;
+    }
+    nameSel.value = guessedName;
+    surnameSel.value = guessedSurname;
+  }
+
+  function computeAndRenderNames(){
+    state.headerRow = $('headerRowChk').checked;
+    state.nameColIdx = parseInt($('nameCol').value, 10);
+    state.surnameColIdx = parseInt($('surnameCol').value, 10);
+    const dataRows = state.headerRow ? state.sheetRows.slice(1) : state.sheetRows;
+
+    const uniq = uniqueNameFactory();
+    state.outputNames = dataRows.map((row, i) => {
+      const first = sanitizeFilename(row[state.nameColIdx]);
+      const last = sanitizeFilename(row[state.surnameColIdx]);
+      const combined = sanitizeFilename(`${first} ${last}`);
+      const base = combined || `ชุดที่ ${i+1}`;
+      return uniq(base);
+    });
+
+    const tbody = $('namesTbody');
+    tbody.innerHTML = '';
+    state.outputNames.slice(0, 200).forEach((n, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="mono">${i+1}</td><td>${n}.pdf</td>`;
+      tbody.appendChild(tr);
+    });
+    $('namesTable').style.display = state.outputNames.length ? '' : 'none';
+    log(`อ่านรายชื่อจากชีต "${state.sheetName}" ได้ ${state.outputNames.length} รายการ`, 'ok');
+    resetProcessing();
+  }
+
+  // ---------- STEP 3: validate + process ----------
+  function resetProcessing(){
+    $('processBtn').disabled = true;
+    $('previewTable').style.display = 'none';
+    $('validateNotice').innerHTML = '';
+    $('results').innerHTML = '';
+    $('downloadZipBtn').style.display = 'none';
+    $('progressWrap').style.display = 'none';
+    $('progressBar').style.width = '0%';
+    $('stampBadge').style.display = 'none';
+    state.results = [];
+  }
+
+  function validate(){
+    const notif = $('validateNotice');
+    clearNotice(notif);
+
+    if(!state.pdfFiles.length){
+      notice(notif, 'err', 'กรุณาอัปโหลดไฟล์ PDF อย่างน้อย 1 ไฟล์');
+      return;
+    }
+    if(!state.outputNames.length){
+      notice(notif, 'err', 'กรุณาอัปโหลดไฟล์ Excel และเลือกคอลัมน์ชื่อ-สกุลให้เรียบร้อย');
+      return;
+    }
+
+    const pageCounts = state.pdfFiles.map(f => f.pageCount);
+    const groupCount = Math.max(...pageCounts);
+    const mismatched = state.pdfFiles.filter(f => f.pageCount !== groupCount);
+
+    const warnings = [];
+    if(mismatched.length){
+      warnings.push(`ไฟล์ต่อไปนี้มีจำนวนหน้าไม่เท่ากับไฟล์ที่มากที่สุด (${groupCount} หน้า) — ชุดที่ไม่มีหน้าคู่กันจะถูกข้ามหน้านั้นไปสำหรับไฟล์นั้น: ${mismatched.map(f=>f.name).join(', ')}`);
+    }
+    if(state.outputNames.length !== groupCount){
+      warnings.push(`จำนวนรายชื่อใน Excel (${state.outputNames.length}) ไม่เท่ากับจำนวนชุดที่คำนวณได้ (${groupCount}) — ชุดที่ไม่มีชื่อจะถูกตั้งชื่อว่า "ชุดที่ N" และรายชื่อส่วนเกินจะไม่ถูกใช้`);
+    }
+
+    if(warnings.length){
+      notice(notif, 'warn', warnings.map(w => `⚠ ${w}`).join('<br>'));
+    } else {
+      notice(notif, 'ok', `✓ พร้อมประมวลผล: ${state.pdfFiles.length} ไฟล์ต้นทาง → ${groupCount} ชุดผลลัพธ์`);
+    }
+
+    renderPreview(groupCount);
+    $('stampCount').textContent = groupCount;
+    $('stampBadge').style.display = 'flex';
+    $('processBtn').disabled = false;
+    log(`ตรวจสอบข้อมูลแล้ว: ${groupCount} ชุด จาก ${state.pdfFiles.length} ไฟล์`, warnings.length ? 'warn' : 'ok');
+  }
+
+  function outputNameFor(i, groupCount){
+    return state.outputNames[i] || `ชุดที่ ${i+1}`;
+  }
+
+  function renderPreview(groupCount){
+    const head = $('previewHead');
+    head.innerHTML = '<th class="mono">ชุดที่</th>' +
+      state.pdfFiles.map((f,i) => `<th>${letterFor(i)}</th>`).join('') +
+      '<th>ชื่อไฟล์ผลลัพธ์</th>';
+
+    const body = $('previewBody');
+    body.innerHTML = '';
+    const maxRows = Math.min(groupCount, 500);
+    for(let i=0; i<maxRows; i++){
+      const tr = document.createElement('tr');
+      let cells = `<td class="mono">${i+1}</td>`;
+      state.pdfFiles.forEach(f => {
+        cells += f.pageCount > i ? `<td>หน้า ${i+1}</td>` : `<td style="color:var(--warn)">— ไม่มี</td>`;
+      });
+      cells += `<td>${outputNameFor(i, groupCount)}.pdf</td>`;
+      tr.innerHTML = cells;
+      body.appendChild(tr);
+    }
+    if(groupCount > maxRows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="${state.pdfFiles.length+2}" class="empty-hint">แสดง ${maxRows} จาก ${groupCount} ชุด</td>`;
+      body.appendChild(tr);
+    }
+    $('previewTable').style.display = '';
+  }
+
+  async function process(){
+    $('processBtn').disabled = true;
+    $('results').innerHTML = '';
+    state.results = [];
+
+    const groupCount = Math.max(...state.pdfFiles.map(f => f.pageCount));
+    const progressWrap = $('progressWrap'), progressBar = $('progressBar');
+    progressWrap.style.display = '';
+    progressBar.style.width = '0%';
+
+    for(let i=0; i<groupCount; i++){
+      try{
+        const outDoc = await PDFLib.PDFDocument.create();
+        for(const f of state.pdfFiles){
+          if(f.pageCount > i){
+            const [copied] = await outDoc.copyPages(f.pdfDoc, [i]);
+            outDoc.addPage(copied);
+          }
+        }
+        const bytes = await outDoc.save();
+        const filename = `${outputNameFor(i, groupCount)}.pdf`;
+        state.results.push({filename, bytes});
+        log(`สร้างไฟล์ "${filename}" สำเร็จ (ชุดที่ ${i+1}/${groupCount})`, 'ok');
+      }catch(err){
+        console.error(`process | group ${i} failed`, err);
+        log(`สร้างชุดที่ ${i+1} ล้มเหลว: ${err.message}`, 'err');
+      }
+      progressBar.style.width = `${Math.round(((i+1)/groupCount)*100)}%`;
+    }
+
+    renderResults();
+    $('processBtn').disabled = false;
+    if(state.results.length){
+      $('downloadZipBtn').style.display = '';
+    }
+    log(`ประมวลผลเสร็จสิ้น: ${state.results.length}/${groupCount} ชุด`, state.results.length === groupCount ? 'ok' : 'warn');
+  }
+
+  function renderResults(){
+    const container = $('results');
+    container.innerHTML = '';
+    state.results.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      const sizeKb = (r.bytes.byteLength/1024).toFixed(0);
+      row.innerHTML = `<span>${r.filename} <span style="color:var(--ink-soft)">(${sizeKb} KB)</span></span>`;
+      const link = document.createElement('a');
+      link.textContent = 'ดาวน์โหลด';
+      link.href = '#';
+      link.onclick = (e) => { e.preventDefault(); downloadBlob(r.bytes, r.filename); };
+      row.appendChild(link);
+      container.appendChild(row);
+    });
+  }
+
+  async function downloadZip(){
+    try{
+      const zip = new JSZip();
+      state.results.forEach(r => zip.file(r.filename, r.bytes));
+      const blob = await zip.generateAsync({type:'blob'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'merged_output.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      log('ดาวน์โหลดไฟล์ zip สำเร็จ', 'ok');
+    }catch(err){
+      console.error('downloadZip | failed', err);
+      log(`สร้างไฟล์ zip ล้มเหลว: ${err.message}`, 'err');
+    }
+  }
+
+  // ---------- wire up ----------
+  wireDrop($('pdfDrop'), $('pdfInput'), addPdfFiles);
+  wireDrop($('xlsxDrop'), $('xlsxInput'), (files) => { if(files[0]) handleExcelFile(files[0]); });
+
+  $('sheetSelect').addEventListener('change', (e) => loadSheet(e.target.value));
+  $('headerRowChk').addEventListener('change', () => { populateColumnSelectors(); computeAndRenderNames(); });
+  $('nameCol').addEventListener('change', computeAndRenderNames);
+  $('surnameCol').addEventListener('change', computeAndRenderNames);
+
+  $('validateBtn').addEventListener('click', validate);
+  $('processBtn').addEventListener('click', process);
+  $('downloadZipBtn').addEventListener('click', downloadZip);
+
+  log('พร้อมใช้งาน — เริ่มจากอัปโหลดไฟล์ PDF และ Excel', 'ok');
+})();
+</script>
+</body>
+</html>
